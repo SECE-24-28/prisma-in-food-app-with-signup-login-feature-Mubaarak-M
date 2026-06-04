@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpiceNest 🍛 — Order Fresh Food</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #e05c2a;
+      --dark: #1a1a2e;
+      --card: #ffffff;
+      --bg: #f7f3ef;
+      --text: #2d2d2d;
+      --muted: #888;
+      --green: #27ae60;
+      --radius: 14px;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    nav {
+      background: var(--dark);
+      color: #fff;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+    .logo span { color: var(--primary); }
+    .nav-links { display: flex; gap: 10px; align-items: center; }
+    .nav-links button {
+      background: none; border: none; color: #ccc;
+      cursor: pointer; font-size: 0.9rem; padding: 6px 12px;
+      border-radius: 8px; transition: all 0.2s;
+    }
+    .nav-links button:hover, .nav-links button.active { background: var(--primary); color: #fff; }
+    #cart-btn { position: relative; }
+    #cart-badge {
+      position: absolute; top: -4px; right: -4px;
+      background: #e74c3c; color: #fff;
+      border-radius: 50%; width: 18px; height: 18px;
+      font-size: 11px; display: flex; align-items: center; justify-content: center;
+      display: none;
+    }
+    #user-name { color: #fff; font-weight: 600; font-size: 0.85rem; }
+
+    /* PAGES */
+    .page { display: none; padding: 30px 24px; max-width: 1100px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* AUTH FORMS */
+    .auth-wrap { max-width: 440px; margin: 40px auto; }
+    .auth-card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 36px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .auth-card h2 { margin-bottom: 6px; font-size: 1.6rem; }
+    .auth-card p { color: var(--muted); margin-bottom: 24px; font-size: 0.9rem; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .form-group input, .form-group select {
+      width: 100%; padding: 11px 14px; border: 1.5px solid #ddd;
+      border-radius: 10px; font-size: 0.95rem; transition: border 0.2s;
+      background: #fafafa;
+    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); background: #fff; }
+    .btn {
+      display: inline-block; padding: 12px 24px;
+      border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.95rem; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; width: 100%; }
+    .btn-primary:hover { background: #c94e20; }
+    .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+    .btn-outline:hover { background: var(--primary); color: #fff; }
+    .btn-sm { padding: 7px 14px; font-size: 0.85rem; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { background: #219150; }
+    .switch-auth { text-align: center; margin-top: 18px; font-size: 0.9rem; color: var(--muted); }
+    .switch-auth a { color: var(--primary); cursor: pointer; font-weight: 600; text-decoration: none; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, var(--dark) 0%, #16213e 100%);
+      color: #fff; border-radius: var(--radius);
+      padding: 50px 40px; margin-bottom: 32px; position: relative; overflow: hidden;
+    }
+    .hero::after {
+      content: '🍛'; font-size: 120px; position: absolute;
+      right: 40px; top: 50%; transform: translateY(-50%);
+      opacity: 0.15; pointer-events: none;
+    }
+    .hero h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.2; margin-bottom: 10px; }
+    .hero h1 span { color: var(--primary); }
+    .hero p { color: #aaa; font-size: 1rem; margin-bottom: 24px; }
+
+    /* CATEGORIES */
+    .categories { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+    .cat-btn {
+      padding: 8px 18px; border-radius: 30px; border: 2px solid #ddd;
+      background: #fff; cursor: pointer; font-size: 0.875rem; font-weight: 600;
+      transition: all 0.2s; color: var(--text);
+    }
+    .cat-btn:hover, .cat-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    /* FOOD GRID */
+    .food-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+    .food-card {
+      background: var(--card); border-radius: var(--radius);
+      overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .food-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .food-emoji { font-size: 64px; text-align: center; padding: 24px 0 12px; background: #fdf6f0; }
+    .food-info { padding: 16px; }
+    .food-info h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .food-info p { font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; line-height: 1.4; }
+    .food-footer { display: flex; justify-content: space-between; align-items: center; }
+    .food-price { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+    .food-cat { font-size: 0.75rem; background: #fdf0e8; color: var(--primary); padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+    .qty-control { display: flex; align-items: center; gap: 8px; }
+    .qty-control button { width: 28px; height: 28px; border: none; border-radius: 50%; background: var(--primary); color: #fff; font-size: 1rem; cursor: pointer; font-weight: 700; }
+    .qty-control span { font-weight: 700; min-width: 20px; text-align: center; }
+
+    /* CART */
+    .cart-wrap { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+    @media(max-width: 768px) { .cart-wrap { grid-template-columns: 1fr; } }
+    .cart-items { background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+    .cart-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f0f0f0; }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-emoji { font-size: 40px; }
+    .cart-item-info { flex: 1; }
+    .cart-item-info h4 { font-weight: 700; margin-bottom: 4px; }
+    .cart-item-info p { font-size: 0.85rem; color: var(--muted); }
+    .cart-item-right { text-align: right; }
+    .cart-item-price { font-weight: 800; color: var(--primary); font-size: 1rem; }
+    .remove-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 1.1rem; margin-top: 4px; }
+    .order-summary { background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); height: fit-content; }
+    .order-summary h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; }
+    .summary-row.total { font-weight: 800; font-size: 1.05rem; border-top: 2px solid #f0f0f0; padding-top: 12px; margin-top: 12px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state div { font-size: 60px; margin-bottom: 16px; }
+
+    /* PAYMENT MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: var(--radius);
+      padding: 32px; width: 90%; max-width: 460px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal h3 { font-size: 1.3rem; margin-bottom: 6px; }
+    .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 22px; }
+    .pay-methods { display: flex; gap: 10px; margin-bottom: 20px; }
+    .pay-method {
+      flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 10px;
+      text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      transition: all 0.2s;
+    }
+    .pay-method.selected { border-color: var(--primary); background: #fdf0e8; color: var(--primary); }
+    .pay-method div { font-size: 1.5rem; margin-bottom: 4px; }
+    .pay-fields { margin-bottom: 20px; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns button { flex: 1; }
+
+    /* SUCCESS */
+    .success-screen { text-align: center; padding: 40px; }
+    .success-screen .tick { font-size: 72px; margin-bottom: 16px; }
+    .success-screen h2 { font-size: 1.6rem; color: var(--green); margin-bottom: 8px; }
+    .success-screen p { color: var(--muted); margin-bottom: 6px; }
+    .txn-box { background: #f0f9f4; border-radius: 10px; padding: 14px; margin: 18px 0; font-size: 0.9rem; }
+    .txn-box b { color: var(--green); font-size: 1rem; }
+
+    /* ORDERS PAGE */
+    .order-card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 22px; margin-bottom: 18px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .order-id { font-weight: 800; font-size: 1rem; }
+    .status-badge {
+      padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #d1e7dd; color: #0f5132; }
+    .status-cancelled { background: #f8d7da; color: #842029; }
+    .order-items-list { font-size: 0.88rem; color: var(--muted); margin-bottom: 12px; }
+    .order-meta { display: flex; justify-content: space-between; align-items: center; }
+    .order-total { font-weight: 800; font-size: 1.05rem; color: var(--primary); }
+    .order-date { font-size: 0.8rem; color: var(--muted); }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: #fff; padding: 12px 24px; border-radius: 30px;
+      font-size: 0.9rem; font-weight: 600; z-index: 999; opacity: 0;
+      transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ALERT */
+    .alert { padding: 10px 14px; border-radius: 8px; font-size: 0.875rem; margin-bottom: 14px; }
+    .alert-error { background: #fdecea; color: #c0392b; }
+    .alert-success { background: #e9f7ef; color: #1e8449; }
+
+    h2.page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 22px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Spice<span>Nest</span> 🍛</div>
+  <div class="nav-links">
+    <span id="user-name"></span>
+    <button onclick="showPage('home')" id="nav-home">🏠 Home</button>
+    <button onclick="showPage('cart')" id="cart-btn">🛒 Cart <span id="cart-badge">0</span></button>
+    <button onclick="showPage('orders')" id="nav-orders" style="display:none">📦 Orders</button>
+    <button onclick="logout()" id="nav-logout" style="display:none">Logout</button>
+    <button onclick="showPage('login')" id="nav-login">Login</button>
+    <button onclick="showPage('signup')" id="nav-signup">Sign Up</button>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h1>Hungry? We've got<br><span>Fresh Food</span> for you.</h1>
+    <p>Order from our kitchen — fast delivery, great taste.</p>
+    <button class="btn btn-primary" style="width:auto" onclick="showPage('signup')">Get Started →</button>
+  </div>
+  <div class="categories" id="cat-list"></div>
+  <div class="food-grid" id="food-grid"></div>
+</div>
+
+<!-- SIGNUP PAGE -->
+<div class="page" id="page-signup">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h2>Create Account 👋</h2>
+      <p>Join SpiceNest and start ordering delicious food</p>
+      <div id="signup-alert"></div>
+      <div class="form-group"><label>Full Name</label><input id="s-name" placeholder="e.g. Mubaarak M" /></div>
+      <div class="form-group"><label>Email</label><input id="s-email" type="email" placeholder="you@email.com" /></div>
+      <div class="form-group"><label>Phone Number</label><input id="s-phone" placeholder="10-digit mobile number" maxlength="10" /></div>
+      <div class="form-group"><label>Password</label><input id="s-pass" type="password" placeholder="Min 6 characters" /></div>
+      <div class="form-group"><label>Delivery Address</label><input id="s-addr" placeholder="House no, Street, City" /></div>
+      <button class="btn btn-primary" onclick="signup()">Create My Account</button>
+      <div class="switch-auth">Already have an account? <a onclick="showPage('login')">Login here</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN PAGE -->
+<div class="page" id="page-login">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h2>Welcome Back 🙌</h2>
+      <p>Login to continue ordering your favourite food</p>
+      <div id="login-alert"></div>
+      <div class="form-group"><label>Email</label><input id="l-email" type="email" placeholder="you@email.com" /></div>
+      <div class="form-group"><label>Password</label><input id="l-pass" type="password" placeholder="Your password" /></div>
+      <button class="btn btn-primary" onclick="login()">Login</button>
+      <div class="switch-auth">New here? <a onclick="showPage('signup')">Create account</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- CART PAGE -->
+<div class="page" id="page-cart">
+  <h2 class="page-title">Your Cart 🛒</h2>
+  <div id="cart-content"></div>
+</div>
+
+<!-- ORDERS PAGE -->
+<div class="page" id="page-orders">
+  <h2 class="page-title">My Orders 📦</h2>
+  <div id="orders-content"></div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="pay-modal">
+  <div class="modal" id="modal-inner"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+  const API = '/api';
+  let token = localStorage.getItem('token');
+  let user = JSON.parse(localStorage.getItem('user') || 'null');
+  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  let allFoods = [];
+  let activeCategory = 'All';
+
+  // ─── INIT ───
+  window.onload = () => {
+    updateNav();
+    loadFoods();
+    updateCartBadge();
+  };
+
+  function updateNav() {
+    const loggedIn = !!token;
+    document.getElementById('nav-login').style.display = loggedIn ? 'none' : '';
+    document.getElementById('nav-signup').style.display = loggedIn ? 'none' : '';
+    document.getElementById('nav-logout').style.display = loggedIn ? '' : 'none';
+    document.getElementById('nav-orders').style.display = loggedIn ? '' : 'none';
+    document.getElementById('user-name').textContent = user ? `Hi, ${user.name.split(' ')[0]} 👤` : '';
+  }
+
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(`page-${name}`).classList.add('active');
+    if (name === 'cart') renderCart();
+    if (name === 'orders') loadOrders();
+  }
+
+  // ─── TOAST ───
+  function toast(msg, dur = 2800) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), dur);
+  }
+
+  // ─── FOOD ───
+  async function loadFoods() {
+    const res = await fetch(`${API}/food`);
+    allFoods = await res.json();
+    renderCategories();
+    renderFoods(allFoods);
+  }
+
+  function renderCategories() {
+    const cats = ['All', ...new Set(allFoods.map(f => f.category))];
+    document.getElementById('cat-list').innerHTML = cats.map(c =>
+      `<button class="cat-btn ${c === activeCategory ? 'active' : ''}" onclick="filterCat('${c}')">${c}</button>`
+    ).join('');
+  }
+
+  function filterCat(cat) {
+    activeCategory = cat;
+    renderCategories();
+    renderFoods(cat === 'All' ? allFoods : allFoods.filter(f => f.category === cat));
+  }
+
+  function renderFoods(foods) {
+    document.getElementById('food-grid').innerHTML = foods.map(f => {
+      const qty = getQty(f.id);
+      return `
+        <div class="food-card">
+          <div class="food-emoji">${f.image}</div>
+          <div class="food-info">
+            <h3>${f.name}</h3>
+            <p>${f.description}</p>
+            <div class="food-footer">
+              <div>
+                <div class="food-price">₹${f.price}</div>
+                <div class="food-cat">${f.category}</div>
+              </div>
+              <div class="qty-control">
+                <button onclick="changeQty(${f.id}, -1)">−</button>
+                <span id="qty-${f.id}">${qty}</span>
+                <button onclick="changeQty(${f.id}, 1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function getQty(id) {
+    const item = cart.find(c => c.foodItemId === id);
+    return item ? item.quantity : 0;
+  }
+
+  function changeQty(id, delta) {
+    if (!token) { toast('🔒 Please login to add items'); showPage('login'); return; }
+    const food = allFoods.find(f => f.id === id);
+    const idx = cart.findIndex(c => c.foodItemId === id);
+    if (idx === -1 && delta > 0) {
+      cart.push({ foodItemId: id, quantity: 1, name: food.name, price: food.price, image: food.image });
+    } else if (idx !== -1) {
+      cart[idx].quantity += delta;
+      if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+    }
+    saveCart();
+    const el = document.getElementById(`qty-${id}`);
+    if (el) el.textContent = getQty(id);
+    updateCartBadge();
+  }
+
+  function saveCart() {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }
+
+  function updateCartBadge() {
+    const total = cart.reduce((s, i) => s + i.quantity, 0);
+    const badge = document.getElementById('cart-badge');
+    badge.style.display = total > 0 ? 'flex' : 'none';
+    badge.textContent = total;
+  }
+
+  // ─── CART RENDER ───
+  function renderCart() {
+    const el = document.getElementById('cart-content');
+    if (!cart.length) {
+      el.innerHTML = `<div class="empty-state"><div>🛒</div><h3>Your cart is empty</h3><p>Browse our menu and add some delicious food!</p><br><button class="btn btn-primary" style="width:auto" onclick="showPage('home')">Browse Menu</button></div>`;
+      return;
+    }
+    const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+    const delivery = 30;
+    const total = subtotal + delivery;
+    el.innerHTML = `
+      <div class="cart-wrap">
+        <div class="cart-items">
+          ${cart.map(i => `
+            <div class="cart-item">
+              <div class="cart-emoji">${i.image}</div>
+              <div class="cart-item-info">
+                <h4>${i.name}</h4>
+                <p>₹${i.price} × ${i.quantity}</p>
+              </div>
+              <div class="cart-item-right">
+                <div class="cart-item-price">₹${(i.price * i.quantity).toFixed(2)}</div>
+                <button class="remove-btn" onclick="removeItem(${i.foodItemId})">🗑️</button>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div class="order-summary">
+          <h3>Order Summary</h3>
+          <div class="summary-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
+          <div class="summary-row"><span>Delivery fee</span><span>₹${delivery}</span></div>
+          <div class="summary-row total"><span>Total</span><span>₹${total.toFixed(2)}</span></div>
+          <br>
+          <button class="btn btn-primary" onclick="openPayModal(${total.toFixed(2)})">Proceed to Pay ₹${total.toFixed(2)}</button>
+        </div>
+      </div>`;
+  }
+
+  function removeItem(id) {
+    cart = cart.filter(c => c.foodItemId !== id);
+    saveCart(); updateCartBadge(); renderCart();
+  }
+
+  // ─── PAYMENT MODAL ───
+  function openPayModal(total) {
+    if (!token) { toast('🔒 Please login first'); showPage('login'); return; }
+    document.getElementById('modal-inner').innerHTML = payFormHTML(total);
+    document.getElementById('pay-modal').classList.add('open');
+    selectPayMethod('card');
+  }
+
+  function payFormHTML(total) {
+    return `
+      <h3>💳 Secure Payment</h3>
+      <p>Amount to pay: <strong>₹${total}</strong></p>
+      <div class="pay-methods">
+        <div class="pay-method" id="pm-card" onclick="selectPayMethod('card')"><div>💳</div>Card</div>
+        <div class="pay-method" id="pm-upi" onclick="selectPayMethod('upi')"><div>📱</div>UPI</div>
+        <div class="pay-method" id="pm-cod" onclick="selectPayMethod('cod')"><div>💵</div>Cash</div>
+      </div>
+      <div id="pay-fields" class="pay-fields"></div>
+      <div id="pay-alert"></div>
+      <div class="modal-btns">
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-green" onclick="processPayment(${total})">Pay Now</button>
+      </div>`;
+  }
+
+  let selectedMethod = 'card';
+  function selectPayMethod(m) {
+    selectedMethod = m;
+    ['card','upi','cod'].forEach(x => document.getElementById(`pm-${x}`)?.classList.remove('selected'));
+    document.getElementById(`pm-${m}`)?.classList.add('selected');
+    const f = document.getElementById('pay-fields');
+    if (m === 'card') {
+      f.innerHTML = `
+        <div class="form-group"><label>Card Number</label><input id="p-card" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"/></div>
+        <div style="display:flex;gap:10px">
+          <div class="form-group" style="flex:1"><label>Expiry</label><input id="p-exp" placeholder="MM/YY" maxlength="5"/></div>
+          <div class="form-group" style="flex:1"><label>CVV</label><input id="p-cvv" placeholder="123" maxlength="3" type="password"/></div>
+        </div>`;
+    } else if (m === 'upi') {
+      f.innerHTML = `<div class="form-group"><label>UPI ID</label><input id="p-upi" placeholder="yourname@upi"/></div>`;
+    } else {
+      f.innerHTML = `<p style="color:var(--muted);font-size:0.9rem;padding:10px 0">Pay with cash when your order arrives 🏠</p>`;
+    }
+  }
+
+  function fmtCard(el) {
+    el.value = el.value.replace(/\D/g,'').substring(0,16).replace(/(.{4})/g,'$1 ').trim();
+  }
+
+  async function processPayment(total) {
+    const alertEl = document.getElementById('pay-alert');
+    alertEl.innerHTML = '';
+    let extra = {};
+    if (selectedMethod === 'card') {
+      const card = document.getElementById('p-card').value.replace(/\s/g,'');
+      if (card.length !== 16) { alertEl.innerHTML = `<div class="alert alert-error">Enter valid 16-digit card number</div>`; return; }
+      extra = { cardNumber: card };
+    } else if (selectedMethod === 'upi') {
+      const upi = document.getElementById('p-upi').value;
+      if (!upi.includes('@')) { alertEl.innerHTML = `<div class="alert alert-error">Enter valid UPI ID (e.g. name@upi)</div>`; return; }
+      extra = { upiId: upi };
+    }
+
+    // Place order first
+    const orderRes = await fetch(`${API}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ items: cart.map(c => ({ foodItemId: c.foodItemId, quantity: c.quantity })) })
+    });
+    const order = await orderRes.json();
+    if (!orderRes.ok) { alertEl.innerHTML = `<div class="alert alert-error">${order.error}</div>`; return; }
+
+    // Process payment
+    const payRes = await fetch(`${API}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ orderId: order.id, method: selectedMethod, ...extra })
+    });
+    const pay = await payRes.json();
+    if (!payRes.ok) { alertEl.innerHTML = `<div class="alert alert-error">${pay.error}</div>`; return; }
+
+    cart = []; saveCart(); updateCartBadge();
+    document.getElementById('modal-inner').innerHTML = `
+      <div class="success-screen">
+        <div class="tick">✅</div>
+        <h2>Order Confirmed!</h2>
+        <p>Thank you for ordering from SpiceNest</p>
+        <div class="txn-box">
+          Transaction ID: <b>${pay.txnRef}</b><br>
+          Amount Paid: <b>₹${pay.amount}</b><br>
+          Method: <b>${pay.method.toUpperCase()}</b>
+        </div>
+        <p style="color:var(--muted);font-size:0.85rem">Estimated delivery: <b>30–45 mins</b></p>
+        <br>
+        <button class="btn btn-primary" style="width:auto" onclick="closeModal();showPage('orders')">View My Orders</button>
+      </div>`;
+  }
+
+  function closeModal() {
+    document.getElementById('pay-modal').classList.remove('open');
+  }
+  document.getElementById('pay-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ─── AUTH ───
+  async function signup() {
+    const alertEl = document.getElementById('signup-alert');
+    const name = document.getElementById('s-name').value.trim();
+    const email = document.getElementById('s-email').value.trim();
+    const phone = document.getElementById('s-phone').value.trim();
+    const password = document.getElementById('s-pass').value;
+    const address = document.getElementById('s-addr').value.trim();
+
+    if (!name || !email || !phone || !password)
+      return alertEl.innerHTML = `<div class="alert alert-error">Please fill all required fields</div>`;
+    if (phone.length !== 10 || !/^\d+$/.test(phone))
+      return alertEl.innerHTML = `<div class="alert alert-error">Enter a valid 10-digit phone number</div>`;
+    if (password.length < 6)
+      return alertEl.innerHTML = `<div class="alert alert-error">Password must be at least 6 characters</div>`;
+
+    const res = await fetch(`${API}/auth/signup`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, password, address })
+    });
+    const data = await res.json();
+    if (!res.ok) return alertEl.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+    saveSession(data);
+    toast('🎉 Account created! Welcome to SpiceNest');
+    showPage('home');
+  }
+
+  async function login() {
+    const alertEl = document.getElementById('login-alert');
+    const email = document.getElementById('l-email').value.trim();
+    const password = document.getElementById('l-pass').value;
+    if (!email || !password)
+      return alertEl.innerHTML = `<div class="alert alert-error">Enter email and password</div>`;
+
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) return alertEl.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+    saveSession(data);
+    toast('👋 Welcome back, ' + data.user.name.split(' ')[0] + '!');
+    showPage('home');
+  }
+
+  function saveSession(data) {
+    token = data.token; user = data.user;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    updateNav();
+  }
+
+  function logout() {
+    token = null; user = null; cart = [];
+    localStorage.clear();
+    updateNav(); updateCartBadge();
+    showPage('home');
+    toast('Logged out. See you soon! 👋');
+  }
+
+  // ─── ORDERS ───
+  async function loadOrders() {
+    if (!token) { document.getElementById('orders-content').innerHTML = `<div class="empty-state"><div>🔒</div><h3>Please login to view orders</h3></div>`; return; }
+    const res = await fetch(`${API}/orders/my`, { headers: { Authorization: `Bearer ${token}` } });
+    const orders = await res.json();
+    const el = document.getElementById('orders-content');
+    if (!orders.length) {
+      el.innerHTML = `<div class="empty-state"><div>📦</div><h3>No orders yet</h3><p>Order something delicious!</p><br><button class="btn btn-primary" style="width:auto" onclick="showPage('home')">Browse Menu</button></div>`;
+      return;
+    }
+    el.innerHTML = orders.map(o => `
+      <div class="order-card">
+        <div class="order-header">
+          <div class="order-id">Order #${o.id}</div>
+          <div class="status-badge status-${o.status}">${o.status.charAt(0).toUpperCase() + o.status.slice(1)}</div>
+        </div>
+        <div class="order-items-list">${o.items.map(i => `${i.foodItem.image} ${i.foodItem.name} × ${i.quantity}`).join(' &nbsp;|&nbsp; ')}</div>
+        <div class="order-meta">
+          <div class="order-total">₹${o.total.toFixed(2)}</div>
+          <div class="order-date">${new Date(o.createdAt).toLocaleString()}</div>
+        </div>
+        ${o.payment ? `<div style="margin-top:10px;font-size:0.82rem;color:var(--muted)">💳 Paid via <b>${o.payment.method.toUpperCase()}</b> &nbsp;|&nbsp; Txn: <b>${o.payment.txnRef}</b></div>` : ''}
+      </div>`).join('');
+  }
+</script>
+</body>
+</html>
